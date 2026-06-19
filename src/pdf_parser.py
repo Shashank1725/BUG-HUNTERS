@@ -19,7 +19,7 @@ complete on its own —
     (scanned, irregular layouts) where the above three struggle.
 """
 
-import fitz  # PyMuPDF
+import fitz  
 import pdfplumber
 import re
 import os
@@ -96,7 +96,6 @@ def extract_text_elements(doc: fitz.Document, doc_id: str) -> List[DocElement]:
             if not text:
                 continue
 
-            elem_counter += 1
             heading_level = classify_heading_level(max_size, body_size, any_bold)
 
             # Detect bullet/numbered list items
@@ -107,6 +106,8 @@ def extract_text_elements(doc: fitz.Document, doc_id: str) -> List[DocElement]:
                 else ElementType.LIST_ITEM if is_list
                 else ElementType.PARAGRAPH
             )
+
+          
 
             elements.append(DocElement(
                 element_id=f"{doc_id}_p{page_num}_el{elem_counter}",
@@ -308,6 +309,28 @@ def parse_pdf(pdf_path: str, output_dir: str = "./output/images", use_camelot: b
 
     # Sort by page, then vertical position
     all_elements.sort(key=lambda e: (e.page, e.position.y0 if e.position else 0))
+
+    # --- HIERARCHY TAGGING ---
+    current_parents = {} # level -> id
+    for el in all_elements:
+        if el.type == ElementType.HEADING:
+            lvl = el.heading_level or 1
+            current_parents[lvl] = el.element_id
+            # clear higher levels
+            for l in range(lvl + 1, 7):
+                current_parents.pop(l, None)
+            
+            # find immediate parent (level - 1)
+            for l in range(lvl - 1, 0, -1):
+                if l in current_parents:
+                    el.parent_id = current_parents[l]
+                    break
+        else:
+            # find deepest current heading
+            if current_parents:
+                deepest_lvl = max(current_parents.keys())
+                el.parent_id = current_parents[deepest_lvl]
+    # -------------------------
 
     parsed = ParsedDocument(
         source_file=pdf_path,
