@@ -1,0 +1,28 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Project specific outputs (Parsed results)
+output/
+src/output/
+images/
+src/images/
+
+# Temporary test files
+test.xlsx
+test.png
+src/test.xlsx
+src/test.png
+test_batch/
+src/test_batch/
+
+# User specific Mac/Windows junk
+.DS_Store
+Thumbs.db

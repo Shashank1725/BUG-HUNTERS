@@ -1,0 +1,26 @@
+# Core PDF parsing
+PyMuPDF>=1.24.0
+pdfplumber>=0.11.0
+
+# DOCX parsing
+python-docx>=1.1.0
+
+# Excel and CSV parsing
+pandas>=2.0.0
+openpyxl>=3.1.0
+tabulate>=0.9.0
+
+# High-accuracy table extraction (optional, needs Ghostscript)
+camelot-py[cv]>=0.11.0
+
+# Fallback / messy-PDF parsing
+unstructured[pdf]>=0.14.0
+
+# Image captioning (BLIP)
+torch>=2.1.0
+torchvision>=0.16.0
+transformers>=4.40.0
+Pillow>=10.0.0
+
+# Utilities
+reportlab>=4.0.0
