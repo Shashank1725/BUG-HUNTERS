@@ -25,7 +25,7 @@ def parse_image(file_path: str, output_dir: str = "./output/images") -> ParsedDo
     os.makedirs(output_dir, exist_ok=True)
     
     # Generate auto-caption
-    caption = caption_image(file_path)
+    caption, confidence = caption_image(file_path)
     
     # Get image dimensions
     try:
@@ -40,6 +40,7 @@ def parse_image(file_path: str, output_dir: str = "./output/images") -> ParsedDo
         type=ElementType.IMAGE,
         content=caption,
         page=1,
+        confidence=confidence,
         metadata={
             "image_path": file_path,
             "format": ext,
