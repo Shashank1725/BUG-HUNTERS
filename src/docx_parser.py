@@ -133,12 +133,13 @@ def parse_docx(docx_path: str, output_dir: str = "./output/images") -> ParsedDoc
                 elem_counter += 1
                 img_path = image_paths[img_pointer]
                 img_pointer += 1
-                caption = caption_image(img_path)
+                caption, conf = caption_image(img_path)
                 elements.append(DocElement(
                     element_id=f"{doc_id}_el{elem_counter}_img",
                     type=ElementType.IMAGE,
                     content=caption,
                     page=current_page,
+                    confidence=conf,
                     metadata={"image_path": img_path, "auto_captioned": True},
                 ))
 
@@ -186,6 +187,22 @@ def parse_docx(docx_path: str, output_dir: str = "./output/images") -> ParsedDoc
                     "extraction_method": "python-docx",
                 },
             ))
+
+    # --- HIERARCHY TAGGING ---
+    current_parents = {}
+    for el in elements:
+        if el.type == ElementType.HEADING:
+            lvl = el.heading_level or 1
+            current_parents[lvl] = el.element_id
+            for l in range(lvl + 1, 7): current_parents.pop(l, None)
+            for l in range(lvl - 1, 0, -1):
+                if l in current_parents:
+                    el.parent_id = current_parents[l]
+                    break
+        else:
+            if current_parents:
+                el.parent_id = current_parents[max(current_parents.keys())]
+    # -------------------------
 
     parsed = ParsedDocument(
         source_file=docx_path,
