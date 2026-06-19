@@ -15,7 +15,8 @@ import os
 import sys
 import argparse
 import time
-from schema import ParsedDocument
+from typing import List
+from schema import DocElement, ElementType, ParsedDocument
 from pdf_parser import parse_pdf
 from docx_parser import parse_docx
 from xlsx_parser import parse_xlsx
@@ -32,6 +33,36 @@ SUPPORTED_EXTENSIONS = {
     ".jpg": parse_image,
     ".jpeg": parse_image
 }
+
+_embed_model = None
+
+def get_embedding_model():
+    global _embed_model
+    if _embed_model is None:
+        print("[*] Loading embedding model (all-MiniLM-L6-v2)...")
+        from sentence_transformers import SentenceTransformer
+        _embed_model = SentenceTransformer("all-MiniLM-L6-v2")
+    return _embed_model
+
+def generate_embeddings(elements: List[DocElement]):
+    """Generate vector embeddings for every text/table/caption element."""
+    model = get_embedding_model()
+    texts = [e.content for e in elements if e.content]
+    if not texts:
+        return
+    
+    # Filter out extremely long tables or binary strings if any
+    clean_texts = [str(t)[:1000] for t in texts] # clip for standard encoder
+    
+    print(f"[*] Generating embeddings for {len(clean_texts)} elements...")
+    vectors = model.encode(clean_texts).tolist()
+    
+    # Map back to elements
+    text_ptr = 0
+    for e in elements:
+        if e.content:
+            e.embedding = vectors[text_ptr]
+            text_ptr += 1
 
 
 def parse_document(file_path: str, output_dir: str = "./output", use_camelot: bool = False) -> ParsedDocument:
@@ -55,6 +86,11 @@ def parse_document(file_path: str, output_dir: str = "./output", use_camelot: bo
 
     elapsed = time.time() - t0
     result.parse_stats["parse_time_seconds"] = round(elapsed, 2)
+    
+    # --- RAG ENHANCEMENT ---
+    generate_embeddings(result.elements)
+    # -----------------------
+    
     return result
 
 
