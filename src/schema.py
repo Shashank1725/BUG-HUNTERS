@@ -43,6 +43,9 @@ class DocElement:
     page: int                             # 1-indexed page number
     position: Optional[BoundingBox] = None
     heading_level: Optional[int] = None   # 1-6 for headings, None otherwise
+    parent_id: Optional[str] = None       # ID of the parent heading (Hierarchy)
+    embedding: Optional[List[float]] = None # Vector embedding for RAG
+    confidence: Optional[float] = None    # Prediction confidence (e.g. for AI captions)
     metadata: Dict[str, Any] = field(default_factory=dict)
 
     def to_dict(self) -> dict:
