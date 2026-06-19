@@ -13,6 +13,7 @@ Usage:
 
 import os
 import sys
+import tempfile
 import argparse
 import time
 from typing import List
@@ -27,12 +28,35 @@ from image_parser import parse_image
 SUPPORTED_EXTENSIONS = {
     ".pdf": parse_pdf,
     ".docx": parse_docx,
+    ".doc": parse_docx,     # converted to .docx first
     ".xlsx": parse_xlsx,
     ".csv": parse_csv,
     ".png": parse_image,
     ".jpg": parse_image,
-    ".jpeg": parse_image
+    ".jpeg": parse_image,
+    ".webp": parse_image
 }
+
+
+def convert_doc_to_docx(doc_path: str) -> str:
+    """
+    Convert legacy .doc (Word 97-2003) to .docx using MS Word via COM.
+    Returns path to the converted .docx file.
+    Requires Microsoft Word installed on the system.
+    """
+    try:
+        from doc2docx import convert
+    except ImportError:
+        raise ImportError(
+            "doc2docx is required for .doc support. Install it with: pip install doc2docx"
+        )
+
+    # Create temp .docx path
+    docx_path = os.path.splitext(doc_path)[0] + ".docx"
+    print(f"[*] Converting .doc → .docx: {doc_path}")
+    convert(doc_path, docx_path)
+    print(f"    → Converted to: {docx_path}")
+    return docx_path
 
 _embed_model = None
 
@@ -75,11 +99,14 @@ def parse_document(file_path: str, output_dir: str = "./output", use_camelot: bo
 
     if ext == ".pdf":
         result = parse_pdf(file_path, output_dir=images_dir, use_camelot=use_camelot)
+    elif ext == ".doc":
+        docx_path = convert_doc_to_docx(file_path)
+        result = parse_docx(docx_path, output_dir=images_dir)
     elif ext == ".xlsx":
         result = parse_xlsx(file_path, output_dir=images_dir)
     elif ext == ".csv":
         result = parse_csv(file_path, output_dir=images_dir)
-    elif ext in [".png", ".jpg", ".jpeg"]:
+    elif ext in [".png", ".jpg", ".jpeg", ".webp"]:
         result = parse_image(file_path, output_dir=images_dir)
     else:
         result = parse_docx(file_path, output_dir=images_dir)
