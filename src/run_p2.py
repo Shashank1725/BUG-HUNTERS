@@ -216,10 +216,16 @@ if moved:
 print("\n" + "="*60)
 print("  STEP 2: Building Relationship Graph")
 print("="*60)
+# config = PipelineConfig(
+#     output_dir=output_dir,
+#     use_ml_similarity=False,
+#     use_entity_cooccurrence=False,
+# )
 config = PipelineConfig(
     output_dir=output_dir,
-    use_ml_similarity=False,
-    use_entity_cooccurrence=False,
+    use_ml_similarity=True,
+    use_entity_cooccurrence=True,
+    ml_similarity_threshold=0.65,
 )
 graph = GraphPipeline(config).run_from_doc(parsed_doc)
 

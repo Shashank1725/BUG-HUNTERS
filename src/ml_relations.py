@@ -35,10 +35,32 @@ from graph       import DocumentGraph
 
 logger = logging.getLogger(__name__)
 
+def _safe_content(e: DocElement) -> str:
+    """
+    Always return a plain string from e.content.
+    Guards against parsers that store tuples, lists, or None
+    (e.g. captioner.py returning (caption_text, confidence)).
+    """
+    if isinstance(e.content, str):
+        return e.content
+    if isinstance(e.content, (list, tuple)):
+        return " ".join(str(x) for x in e.content if x is not None)
+    return str(e.content) if e.content is not None else ""
 
 # ─────────────────────────────────────────────────────────────────────────────
 # 1.  Semantic similarity  (sentence-transformers)
 # ─────────────────────────────────────────────────────────────────────────────
+
+# @dataclass
+# class MLRelationConfig:
+#     similarity_threshold : float = 0.75
+#     eligible_types       : tuple = (
+#         ElementType.PARAGRAPH,
+#         ElementType.HEADING,
+#         ElementType.CAPTION,
+#     )
+#     embedding_model      : str   = "all-MiniLM-L6-v2"
+#     max_nodes            : int   = 500   # O(n²) — cap for large documents
 
 @dataclass
 class MLRelationConfig:
@@ -47,6 +69,8 @@ class MLRelationConfig:
         ElementType.PARAGRAPH,
         ElementType.HEADING,
         ElementType.CAPTION,
+        ElementType.TABLE,
+        ElementType.LIST_ITEM,
     )
     embedding_model      : str   = "all-MiniLM-L6-v2"
     max_nodes            : int   = 500   # O(n²) — cap for large documents
@@ -94,17 +118,23 @@ class MLRelationBuilder:
 
         eligible = [
             n for n in graph.all_nodes()
-            if n.type in self.cfg.eligible_types and n.content.strip()
+            if n.type in self.cfg.eligible_types and _safe_content(n).strip()
         ][: self.cfg.max_nodes]
 
         if len(eligible) < 2:
             return 0
 
-        texts      = [n.content[:512] for n in eligible]
+        texts      = [_safe_content(n)[:512] for n in eligible]
         embeddings = self._model.encode(texts, convert_to_tensor=True,  # type: ignore
                                         show_progress_bar=False)
         scores     = util.cos_sim(embeddings, embeddings)  # type: ignore
         added      = 0
+        max_off_diag = 0.0
+        for i in range(len(eligible)):
+            for j in range(i + 1, len(eligible)):
+                max_off_diag = max(max_off_diag, float(scores[i][j]))
+        print(f"[MLRelations] highest pairwise similarity found: {max_off_diag:.3f} "
+              f"(threshold is {self.cfg.similarity_threshold})")
 
         for i in range(len(eligible)):
             for j in range(i + 1, len(eligible)):
@@ -174,12 +204,12 @@ class EntityCooccurrenceBuilder:
         Returns the number of edges added.
         """
         self._load()
-        nodes = [n for n in graph.all_nodes() if n.content.strip()]
+        nodes = [n for n in graph.all_nodes() if _safe_content(n).strip()]
 
         # entity_key → [element_ids that mention it]
         entity_map: dict[str, list[str]] = {}
         for node in nodes:
-            doc = self._nlp(node.content[: self.cfg.content_limit])  # type: ignore
+            doc = self._nlp(_safe_content(node)[: self.cfg.content_limit])  # type: ignore
             for ent in doc.ents:
                 if ent.label_ in self.cfg.entity_labels:
                     key = f"{ent.label_}:{ent.text.lower()}"
