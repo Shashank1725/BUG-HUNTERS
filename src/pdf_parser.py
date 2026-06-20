@@ -118,6 +118,7 @@ def extract_text_elements(doc: fitz.Document, doc_id: str) -> List[DocElement]:
                 heading_level=heading_level,
                 metadata={"font_size": round(max_size, 1), "bold": any_bold},
             ))
+            elem_counter+=1
 
     return elements
 

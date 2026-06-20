@@ -24,3 +24,17 @@ Pillow>=10.0.0
 
 # Utilities
 reportlab>=4.0.0
+
+# Person 2 — Relationship Modeling & Graph Construction
+# -------------------------------------------------------
+# Core (required)
+networkx>=3.2
+
+# Optional ML enrichment layers
+sentence-transformers>=2.7   # MLRelationBuilder (CO_REFERENCE via cosine similarity)
+spacy>=3.7                   # EntityCooccurrenceBuilder (named-entity co-occurrence)
+# After installing spaCy: python -m spacy download en_core_web_sm
+
+# ── Integration ─────────────────────────────────────────
+# Person 1's schema.py must be on PYTHONPATH (or same folder).
+# In the integrated repo rename schema_p1.py imports to:  from schema import ...
