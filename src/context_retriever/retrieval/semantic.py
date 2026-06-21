@@ -1,8 +1,8 @@
 import logging
 from typing import List, Dict, Optional, Any
-from src.config import settings
-from src.embeddings.generator import EmbeddingsGenerator
-from src.database.qdrant_client import QdrantStorage
+from src.context_retriever.config import settings
+from src.context_retriever.embeddings.generator import EmbeddingsGenerator
+from src.context_retriever.database.qdrant_client import QdrantStorage
 
 logger = logging.getLogger(__name__)
 
