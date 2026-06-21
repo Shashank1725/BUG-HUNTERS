@@ -2,8 +2,19 @@ import json
 import os
 import sys
 
-# Ensure top-level src is in path
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+# Ensure both the repository root and 'src' directory are in Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))  # src/
+repo_root = os.path.dirname(current_dir)                 # root/
+
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+import io
+# Intercept stdout/stderr to prevent UnicodeEncodeError on Windows terminals
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 from src.context_retriever.main import DistributedContextRetriever
 from src.context_retriever.database.qdrant_client import QdrantStorage
@@ -27,9 +38,12 @@ def main():
         parsed_doc_data = json.load(f)
         parsed_elements = parsed_doc_data.get("elements", [])
 
-    print(f"[*] Loading graph from: {graph_file}")
-    with open(graph_file, "r", encoding="utf-8") as f:
-        doc_graph_json = json.load(f)
+    try:
+        with open(graph_file, "r", encoding="utf-8") as f:
+            doc_graph_json = json.load(f)
+    except UnicodeDecodeError:
+        with open(graph_file, "r", encoding="cp1252") as f:
+            doc_graph_json = json.load(f)
 
     doc_id = "quarterly_report"
 
@@ -72,7 +86,7 @@ def main():
         print("\n[ERROR] Schema validation failed. Halting integration test.")
         sys.exit(1)
 
-    print("\n[✓] Schema validation successful!")
+    print("\n[OK] Schema validation successful!")
 
     # 4. Initialize in-memory Qdrant retriever
     print("\n" + "-" * 40)
@@ -86,7 +100,7 @@ def main():
     # 5. Ingest translated documents
     print("[*] Ingesting adapted elements and graph JSON...")
     stats = retriever.ingest_document(adapted_elements, adapted_graph)
-    print(f"[✓] Ingest stats: {stats}")
+    print(f"[OK] Ingest stats: {stats}")
 
     # 6. Run a quick query to test vector lookup + graph expansion
     print("\n" + "-" * 40)
@@ -96,8 +110,8 @@ def main():
     print(f"[*] Query: '{query}'")
     
     res = retriever.retrieve_context(query)
-    print(f"[✓] Retrieval confidence: {res['confidence_score']:.4f}")
-    print(f"[✓] Seeds found: {res['seed_count']}, Expanded nodes added: {res['expanded_count']}")
+    print(f"[OK] Retrieval confidence: {res['confidence_score']:.4f}")
+    print(f"[OK] Seeds found: {res['seed_count']}, Expanded nodes added: {res['expanded_count']}")
     print("\nRetrieved Markdown Context Preview:")
     print(res["context_bundle"]["formatted_markdown"][:500] + "\n...")
 

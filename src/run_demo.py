@@ -4,8 +4,19 @@ import json
 import argparse
 import google.generativeai as genai
 
-# Ensure top-level src is in path
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
+# Ensure both the repository root and 'src' directory are in Python path
+current_dir = os.path.dirname(os.path.abspath(__file__))  # src/
+repo_root = os.path.dirname(current_dir)                 # root/
+
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
+import io
+# Intercept stdout/stderr to prevent UnicodeEncodeError on Windows terminals
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
+sys.stderr = io.TextIOWrapper(sys.stderr.buffer, encoding='utf-8', errors='replace')
 
 from pipeline import parse_document
 from p2_pipeline import GraphPipeline, PipelineConfig
@@ -77,7 +88,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 70)
-    print("  DELL FUTUREMINDS AI HACKATHON — MULTI-MODAL PIPELINE DEMO")
+    print("  DELL FUTUREMINDS AI HACKATHON - MULTI-MODAL PIPELINE DEMO")
     print("=" * 70)
 
     doc_id = os.path.splitext(os.path.basename(args.pdf_path))[0]
@@ -87,7 +98,7 @@ def main():
     print(f"\n[STEP 1] Ingesting & Parsing PDF: {args.pdf_path}")
     print("-" * 60)
     parsed_doc = parse_document(args.pdf_path, output_dir=args.output_dir)
-    print(f"[✓] Extracted {len(parsed_doc.elements)} structured elements.")
+    print(f"[OK] Extracted {len(parsed_doc.elements)} structured elements.")
 
     # 2. Person 2 - Build Relationship Graph
     print(f"\n[STEP 2] Building Layout Relationship Graph")
@@ -102,15 +113,19 @@ def main():
     
     # Read generated graph JSON
     graph_json_path = os.path.join(args.output_dir, "doc_graph.json")
-    with open(graph_json_path, "r", encoding="utf-8") as f:
-        doc_graph_json = json.load(f)
+    try:
+        with open(graph_json_path, "r", encoding="utf-8") as f:
+            doc_graph_json = json.load(f)
+    except UnicodeDecodeError:
+        with open(graph_json_path, "r", encoding="cp1252") as f:
+            doc_graph_json = json.load(f)
 
     # 3. Person 5 - Adapt schemas
     print(f"\n[STEP 3] Running Person 5 Schema Adapter")
     print("-" * 60)
     raw_elements = [e.to_dict() for e in parsed_doc.elements]
     adapted_elements, adapted_graph = adapt_pipeline_outputs(raw_elements, doc_graph_json, doc_id)
-    print(f"[✓] Translated element properties and multi-graph nodes/links successfully.")
+    print(f"[OK] Translated element properties and multi-graph nodes/links successfully.")
 
     # 4. Person 3 - Ingest into Retriever
     print(f"\n[STEP 4] Ingesting to Distributed Vector & Graph Store")
@@ -118,16 +133,16 @@ def main():
     storage = QdrantStorage(url=":memory:")
     retriever = DistributedContextRetriever(qdrant_storage=storage)
     stats = retriever.ingest_document(adapted_elements, adapted_graph)
-    print(f"[✓] Loaded {stats['elements_ingested']} elements into Vector DB.")
-    print(f"[✓] Loaded {stats['graph_nodes']} nodes and {stats['graph_edges']} edges into NetworkX Store.")
+    print(f"[OK] Loaded {stats['elements_ingested']} elements into Vector DB.")
+    print(f"[OK] Loaded {stats['graph_nodes']} nodes and {stats['graph_edges']} edges into NetworkX Store.")
 
     # 5. Person 3 - Context Retrieval
     print(f"\n[STEP 5] Executing Context Retrieval")
     print("-" * 60)
     print(f"Query: '{args.query}'")
     retrieval_res = retriever.retrieve_context(args.query)
-    print(f"[✓] Seeds retrieved: {retrieval_res['seed_count']}, Expanded nodes added: {retrieval_res['expanded_count']}")
-    print(f"[✓] Total retrieval confidence: {retrieval_res['confidence_score']:.4f}")
+    print(f"[OK] Seeds retrieved: {retrieval_res['seed_count']}, Expanded nodes added: {retrieval_res['expanded_count']}")
+    print(f"[OK] Total retrieval confidence: {retrieval_res['confidence_score']:.4f}")
 
     # 6. Person 4 - QA Synthesis
     print(f"\n[STEP 6] QA Synthesis & Citations")
