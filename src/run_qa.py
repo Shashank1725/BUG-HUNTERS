@@ -25,7 +25,7 @@ def run_pipeline(file_path: str) -> str:
     """
     src_dir = os.path.dirname(os.path.abspath(__file__))
     pipeline_path = os.path.join(src_dir, "pipeline.py")
-    output_dir = os.path.join(src_dir, "..", "output")
+    output_dir = os.path.join(src_dir, "output")
     output_dir = os.path.abspath(output_dir)
     os.makedirs(output_dir, exist_ok=True)
 
