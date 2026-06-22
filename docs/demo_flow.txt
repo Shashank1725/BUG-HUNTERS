@@ -1,0 +1,41 @@
+User uploads PDF
+        ↓
+Parser extracts:
+- Headings
+- Paragraphs
+- Tables
+- Images
+- Captions
+
+        ↓
+
+Embeddings generated
+
+        ↓
+
+Relationship Graph created
+
+        ↓
+
+Graph exported
+(doc_graph.pkl)
+
+        ↓
+
+Retrieval Module (Person 3)
+
+        ↓
+
+Relevant nodes retrieved
+
+        ↓
+
+QA Module (Person 4)
+
+        ↓
+
+Answer generated
+
+        ↓
+
+Evidence/Citations shown

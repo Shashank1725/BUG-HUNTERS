@@ -48,7 +48,7 @@ The pipeline can be executed end-to-end using the master demo runner.
 ### Environment Requirements
 Ensure the following packages are installed:
 ```bash
-py -3.13 -m pip install qdrant-client pydantic-settings google-generativeai
+py -3.13 -m pip install qdrant-client pydantic-settings groq
 ```
 
 ### Execution Command
@@ -57,9 +57,8 @@ Run the following command from the repository root:
 $env:PYTHONPATH=".;src"; $env:PYTHONUTF8="1"; py -3.13 src/run_demo.py sample_docs/quarterly_report.pdf
 ```
 
-### Answer Synthesis Modes
-* **Offline Mock (Default):** Runs a rule-based citation generator showing the inline citations and lineage trace.
-* **Grounded LLM (Recommended):** Set your API key in the environment to generate a fully synthesized response via Gemini:
+### Answer Synthesis Mode
+* **Grounded LLM (Required):** Set your API key in the environment to generate a fully synthesized response via Groq:
   ```bash
-  $env:GEMINI_API_KEY="AIzaSy..."
+  $env:GROQ_API_KEY="gsk_..."
   ```

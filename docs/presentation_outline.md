@@ -94,12 +94,12 @@
 
 ---
 
-## Slide 8: Answer Generation & Citations (Person 4 / Gemini)
+## Slide 8: Answer Generation & Citations (Person 4 / Groq LLM)
 * **Final Synthesis:**
-  * Generates clean, prompt-ready context containing structural headers, tables, and captions.
-  * Uses LLM (Gemini-1.5-Flash) to synthesize grounded, audit-ready responses.
-  * **Lineage-backed inline citations:** Every claim made is tagged with `[document_id::element_id]`, letting users verify facts instantly.
-* **Explainability Stretch Goal achieved:** Traces the lineage showing *why* a particular piece of context was retrieved (e.g., `"Derived from table_1 via caption_link"`).
+  * ContextElements are structured dynamically into a system message format.
+  * Uses Groq LLM (LLaMA-3.3-70B-Versatile) to synthesize grounded, JSON-parsed responses.
+  * **Lineage-backed citations:** Generates precise citations matching element IDs, document sources, page numbers, and exact snippets.
+* **Multi-Turn Memory:** Retains conversation history to handle contextual follow-up questions seamlessly.
 
 ---
 

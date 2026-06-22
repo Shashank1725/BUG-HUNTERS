@@ -43,3 +43,4 @@ spacy>=3.7                   # EntityCooccurrenceBuilder (named-entity co-occurr
 qdrant-client>=1.18.0
 pydantic-settings>=2.14.2
 google-generativeai>=0.8.6
+groq>=1.5.0

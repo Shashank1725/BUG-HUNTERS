@@ -23,62 +23,7 @@ from p2_pipeline import GraphPipeline, PipelineConfig
 from src.integration.schema_adapter import adapt_pipeline_outputs
 from src.context_retriever.main import DistributedContextRetriever
 from src.context_retriever.database.qdrant_client import QdrantStorage
-
-def run_qa_synthesis(query: str, context_bundle: dict) -> str:
-    """
-    Synthesizes the grounded answer using Gemini or a rule-based fallback.
-    """
-    api_key = os.environ.get("GEMINI_API_KEY")
-    markdown_context = context_bundle.get("formatted_markdown", "")
-    citations = context_bundle.get("citation_metadata", [])
-
-    if api_key:
-        print("[*] Contacting Gemini API for grounded answer synthesis...")
-        try:
-            genai.configure(api_key=api_key)
-            model = genai.GenerativeModel("gemini-1.5-flash")
-            
-            prompt = f"""You are an expert financial analyst.
-Answer the user's question based strictly on the provided document context.
-If the context doesn't contain the answer, say "I cannot find the answer in the provided context."
-
-CRITICAL REQUIREMENT: Every claim or fact you extract must be cited inline using the format: [document_id::element_id].
-For example: "Revenue was $10M [report::report_p1_el4] and gross margins rose 18% [report::report_p1_el12]."
-
-Retrieved Context:
-{markdown_context}
-
-Question:
-{query}
-
-Answer:"""
-            response = model.generate_content(prompt)
-            return response.text
-        except Exception as e:
-            print(f"[!] Gemini API call failed: {e}. Falling back to rule-based generation.")
-    
-    # Rule-based fallback if API key is not present or failed
-    print("[*] Generating rule-based citation response (No GEMINI_API_KEY in env)...")
-    
-    # Search for matching citation sources in context
-    matched_citations = []
-    response_lines = ["Based on the retrieved context:"]
-    
-    for c in citations:
-        source_id = f"{c['document_id']}::{c['element_id']}"
-        content_snippet = c['content'].strip().replace("\n", " ")
-        if len(content_snippet) > 100:
-            content_snippet = content_snippet[:100] + "..."
-            
-        if c['type'] == 'heading':
-            response_lines.append(f"- Section '{content_snippet}' was identified as a structural header [{source_id}].")
-        elif c['type'] == 'caption':
-            response_lines.append(f"- The visual element was described by the caption '{content_snippet}' [{source_id}].")
-        else:
-            response_lines.append(f"- Document content states: \"{content_snippet}\" [{source_id}].")
-            
-    response_lines.append("\nNote: Set GEMINI_API_KEY in your environment to generate a fully synthesized response.")
-    return "\n".join(response_lines)
+from qa_engine import QAEngine, ContextElement
 
 def main():
     parser = argparse.ArgumentParser(description="Multi-Modal Semantic Integration Demo Flow (Person 5)")
@@ -86,6 +31,11 @@ def main():
     parser.add_argument("--query", default="What was the company's revenue growth?", help="Question to ask the document")
     parser.add_argument("--output_dir", default="./output", help="Output directory for intermediate files")
     args = parser.parse_args()
+
+    # Check for required GROQ_API_KEY in environment to fail fast with a clean error message
+    if not os.environ.get("GROQ_API_KEY"):
+        print("[ERROR] GROQ_API_KEY not found in environment.")
+        sys.exit(1)
 
     print("=" * 70)
     print("  DELL FUTUREMINDS AI HACKATHON - MULTI-MODAL PIPELINE DEMO")
@@ -144,13 +94,33 @@ def main():
     print(f"[OK] Seeds retrieved: {retrieval_res['seed_count']}, Expanded nodes added: {retrieval_res['expanded_count']}")
     print(f"[OK] Total retrieval confidence: {retrieval_res['confidence_score']:.4f}")
 
-    # 6. Person 4 - QA Synthesis
-    print(f"\n[STEP 6] QA Synthesis & Citations")
+    # 6. Person 4 - QA Synthesis (Integrated QAEngine)
+    print(f"\n[STEP 6] QA Synthesis & Citations via QAEngine")
     print("-" * 60)
-    answer = run_qa_synthesis(args.query, retrieval_res["context_bundle"])
-    print("\nFINAL GROUNDED ANSWER:")
-    print(answer)
-    print("=" * 70)
+    
+    # Convert retrieved elements dicts to ContextElement dataclass instances
+    context_elements = [
+        ContextElement(
+            element_id=el["element_id"],
+            type=el["type"],
+            content=el["content"],
+            page=el.get("page_number") or el.get("page", 1),
+            doc_id=el.get("document_id") or el.get("doc_id", ""),
+            relevance_score=el.get("score") or el.get("relevance_score", 1.0)
+        )
+        for el in retrieval_res["retrieved_elements"]
+    ]
+
+    qa_engine = QAEngine()
+    
+    qa_result = qa_engine.ask(
+        question=args.query,
+        context_elements=context_elements
+    )
+
+    print(qa_result.answer)
+    print(qa_result.confidence)
+    print(qa_result.citations)
 
 if __name__ == "__main__":
     main()

@@ -1,0 +1,9 @@
+RISK 1:
+Embeddings are generated in pipeline.py but removed during graph export.
+
+Impact:
+Person 3 cannot directly perform vector retrieval using doc_graph.pkl.
+
+Possible Fixes:
+1. Recompute embeddings from graph node content.
+2. Preserve embeddings separately and load them during retrieval.
