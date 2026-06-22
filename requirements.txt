@@ -38,3 +38,8 @@ spacy>=3.7                   # EntityCooccurrenceBuilder (named-entity co-occurr
 # ── Integration ─────────────────────────────────────────
 # Person 1's schema.py must be on PYTHONPATH (or same folder).
 # In the integrated repo rename schema_p1.py imports to:  from schema import ...
+
+# Person 3 & Person 5 Integration Dependencies
+qdrant-client>=1.18.0
+pydantic-settings>=2.14.2
+google-generativeai>=0.8.6

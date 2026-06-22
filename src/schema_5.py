@@ -81,3 +81,37 @@ class ParsedDocument:
         for e in self.elements:
             counts[e.type.value] = counts.get(e.type.value, 0) + 1
         return counts
+
+# ── Person 2 additions ────────────────────────────────────────────────────────
+
+class EdgeType(str, Enum):
+    SEQUENTIAL   = "sequential"
+    PARENT_CHILD = "parent_child"
+    SAME_SECTION = "same_section"
+    CAPTION_OF   = "caption_of"
+    FOOTNOTE_REF = "footnote_ref"
+    CROSS_REF    = "cross_ref"
+    CO_REFERENCE = "co_reference"
+    PROXIMITY    = "proximity"
+
+
+@dataclass
+class DocumentEdge:
+    source_id : str
+    target_id : str
+    edge_type : EdgeType
+    weight    : float = 1.0
+    metadata  : dict = field(default_factory=dict)
+
+    def to_dict(self) -> dict:
+        return {
+            "source_id" : self.source_id,
+            "target_id" : self.target_id,
+            "edge_type" : self.edge_type.value,
+            "weight"    : self.weight,
+            "metadata"  : self.metadata,
+        }
+
+    def __repr__(self) -> str:
+        return (f"<Edge {self.edge_type.value}: "
+                f"{self.source_id} → {self.target_id} (w={self.weight:.2f})>")
