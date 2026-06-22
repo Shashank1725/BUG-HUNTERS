@@ -1,7 +1,7 @@
 import logging
 from typing import List, Dict, Any, Optional, Set
 from src import graph
-from src.graph.networkx_store import GraphStore
+from src.context_retriever.graph.networkx_store import GraphStore
 
 logger = logging.getLogger(__name__)
 

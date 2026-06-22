@@ -1,15 +1,15 @@
 import logging
 from typing import List, Dict, Optional, Any
 
-from src.config import settings
-from src.embeddings.generator import EmbeddingsGenerator
-from src.database.qdrant_client import QdrantStorage
-from src.graph.networkx_store import GraphStore
-from src.retrieval.semantic import SemanticRetriever
-from src.retrieval.expansion import GraphExpander
-from src.retrieval.confidence import ConfidenceScorer
-from src.bundler.proof_chain import ProofChainBuilder
-from src.bundler.bundle import ContextBundler
+from src.context_retriever.config import settings
+from src.context_retriever.embeddings.generator import EmbeddingsGenerator
+from src.context_retriever.database.qdrant_client import QdrantStorage
+from src.context_retriever.graph.networkx_store import GraphStore
+from src.context_retriever.retrieval.semantic import SemanticRetriever
+from src.context_retriever.retrieval.expansion import GraphExpander
+from src.context_retriever.retrieval.confidence import ConfidenceScorer
+from src.context_retriever.bundler.proof_chain import ProofChainBuilder
+from src.context_retriever.bundler.bundle import ContextBundler
 
 logger = logging.getLogger(__name__)
 

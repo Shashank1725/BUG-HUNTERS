@@ -1,7 +1,7 @@
 import logging
 from typing import List, Optional
 from sentence_transformers import SentenceTransformer
-from src.config import settings
+from src.context_retriever.config import settings
 
 logger = logging.getLogger(__name__)
 

@@ -13,7 +13,7 @@ from qdrant_client.models import (
     MatchAny,
     FilterSelector
 )
-from src.config import settings
+from src.context_retriever.config import settings
 
 logger = logging.getLogger(__name__)
 
